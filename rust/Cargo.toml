@@ -1,0 +1,11 @@
+# [package]
+# name = "threed"
+# version = "0.1.0"
+# authors = ["Julien de Charentenay <julien@charentenay.me>"]
+# edition = "2021"
+
+[workspace]
+members = [
+  "extras/extra-rust-webgl",
+]
+

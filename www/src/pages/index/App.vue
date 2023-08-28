@@ -1,47 +1,58 @@
-<script setup>
-import HelloWorld from '@/components/HelloWorld.vue'
-import TheWelcome from '@/components/TheWelcome.vue'
+<template>
+  <div class="absolute inset-0 bg-gray-500" id="viewer">
+    <ViewerCanvas :width="width" :height="height" @error="on_error" v-if="loaded" />
+  </div>
+  <ModalErrorComposable :error="error" v-if="error !== null" @dismiss="error = null" />
+</template>
+<script>
+import { computed } from 'vue';
+
+import { useResizeable } from "@/extras/extra-vue-ui/composable/resizeable.js";
+import { useError } from "@/extras/extra-vue-ui/composable/error.js";
+import ModalErrorComposable from "@/extras/extra-vue-ui/modal/modalerrorcomposable.vue";
+import ViewerCanvas from "./components/viewercanvas.vue";
+
+import { mount_wasm } from "@/js/mount.js";
+
+export default {
+  name: "App",
+  setup() {
+    const { width, height, resize } = useResizeable("viewer");
+    const { error, on_error, catcher } = useError(true);
+    return { width, height, resize, 
+             error, on_error, catcher };
+  },
+  provide() {
+    return {
+      wasm: computed(() => this.wasm),
+    };
+  },
+  props: {
+    mount_wasm: {
+      type: Function,
+      default: mount_wasm,
+    },
+  },
+  components: {
+    ModalErrorComposable,
+    ViewerCanvas,
+  },
+  mounted() {
+    this.catcher("mounted", 
+    () => {
+      this.resize();
+      this.mount_wasm()
+      .then((wasm) => { this.wasm = wasm; })
+      .then(() => {this.loaded = true;})
+      .catch((e) => { this.on_error({msg: "Error in mount_wasm", e}); });
+    });
+  },
+  data() { 
+    return { 
+      loaded: false, 
+      wasm: null, 
+    }; 
+  },
+}
 </script>
 
-<template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
-</template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>

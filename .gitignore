@@ -28,3 +28,7 @@ coverage
 *.sw?
 
 package-lock.json
+target
+Cargo.lock
+extra-rust-webgl
+extra-vue-ui
