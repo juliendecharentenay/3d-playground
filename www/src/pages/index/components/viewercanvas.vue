@@ -47,9 +47,9 @@ export default {
       this.camera = this.wasm.CameraBuilder.basic()
         .width(this.width)
         .height(this.height)
-        .eye([2.0, 2.0, 2.0])
+        .eye([0.0, 0.0, 2.0])
         .target([0.0, 0.0, 0.0])
-        .up([0.0, 0.0, 1.0])
+        .up([0.0, 1.0, 0.0])
         .into();
 
       this.grid = this.wasm.GridBuilder.new()
