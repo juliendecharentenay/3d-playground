@@ -30,5 +30,5 @@ coverage
 package-lock.json
 target
 Cargo.lock
-extra-rust-webgl
+extra-rust-wasm
 extra-vue-ui

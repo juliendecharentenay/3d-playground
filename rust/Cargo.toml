@@ -6,6 +6,6 @@
 
 [workspace]
 members = [
-  "extras/extra-rust-webgl",
+  "extras/extra-rust-wasm",
 ]
 
