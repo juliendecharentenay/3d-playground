@@ -1,5 +1,5 @@
 <template>
-  <canvas :width="width" :height="height" class="bg-gray-100" ref="viewer"
+  <canvas :width="width" :height="height" class="bg-gray-100 absolute inset-0" ref="viewer"
     @mousedown="mouse_down"
     @mousemove="mouse_move"
     @mouseup="mouse_up"
@@ -22,10 +22,10 @@ export default {
   },
   watch: {
     height(newV, oldV) { 
-      this.catcher("height update", () => {if (this.camera !== null) { this.camera = this.camera.height(newV); } });
+      this.catcher("height update", () => {if (this.camera !== null) { this.camera = this.camera.to_camera().height(newV); } });
     },
     width(newV, oldV)  { 
-      this.catcher("height update", () => {if (this.camera !== null) { this.camera = this.camera.width(newV); } });
+      this.catcher("height update", () => {if (this.camera !== null) { this.camera = this.camera.to_camera().width(newV); } });
     },
   },
   emits: [ 'error' ],

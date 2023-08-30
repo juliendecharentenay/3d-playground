@@ -1,7 +1,9 @@
 <template>
-  <div class="absolute inset-0 bg-gray-500" id="viewer">
-    <TouchAnimation @error="on_error">
-      <ViewerCanvas :width="width" :height="height" @error="on_error" v-if="loaded" />
+  <div class="absolute inset-0 bg-gray-500 overflow-clip" id="viewer">
+    <TouchAnimation :default_radius="0.10*Math.min(width, height)"
+                    @error="on_error" v-if="loaded">
+      <ViewerCanvas :width="width" :height="height" @error="on_error" />
+      <TouchScrollTool />
     </TouchAnimation>
   </div>
   <ModalErrorComposable :error="error" v-if="error !== null" @dismiss="error = null" />
@@ -14,6 +16,7 @@ import { useError } from "@/extras/extra-vue-ui/composable/error.js";
 import ModalErrorComposable from "@/extras/extra-vue-ui/modal/modalerrorcomposable.vue";
 import ViewerCanvas from "./components/viewercanvas.vue";
 import TouchAnimation from "@/extras/extra-vue-ui/touch/touchanimation.vue";
+import TouchScrollTool from "@/extras/extra-vue-ui/touch/touchscrolltool.vue";
 
 import { mount_wasm } from "@/js/mount.js";
 
@@ -39,7 +42,7 @@ export default {
   components: {
     ModalErrorComposable,
     ViewerCanvas,
-    TouchAnimation,
+    TouchAnimation, TouchScrollTool,
   },
   mounted() {
     this.catcher("mounted", 
