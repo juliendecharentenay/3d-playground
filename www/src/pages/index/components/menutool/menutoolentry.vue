@@ -1,5 +1,5 @@
 <template>
-  <div class="px-2 rounded-r-md text-center bg-transparent"
+  <div class="px-2 rounded-r-md text-center"
        :class="{
                  'text-slate-900 border-slate-900 border': active,
                  'text-slate-800': ! active,
