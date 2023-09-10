@@ -16,9 +16,14 @@ import { useComponentError } from "@/extras/extra-vue-ui/composable/error.js";
 export default {
   name: "ViewerCanvas",
   inject: [ 'wasm' ],
+  setup: function(props, context) {
+    const { on_error, catcher } = useComponentError(context);
+    return { on_error, catcher };
+  },
   props: {
-    width: { type: Number, required: true, },
-    height: { type: Number, required: true, },
+    width:    { type: Number, required: true, },
+    height:   { type: Number, required: true, },
+    elements: { type: Array, required: true, },
   },
   watch: {
     height(newV, oldV) { 
@@ -29,14 +34,9 @@ export default {
     },
   },
   emits: [ 'error' ],
-  setup: function() {
-    const { on_error, catcher } = useComponentError(true, (k, p) => {$emit(k, p);});
-    return { on_error, catcher };
-  },
   data: function() {
     return {
       camera: null,
-      grid: null,
       context: null,
     };
   },
@@ -47,18 +47,10 @@ export default {
       this.camera = this.wasm.CameraBuilder.basic()
         .width(this.width)
         .height(this.height)
-        .eye([0.0, 0.0, 2.0])
+        .eye([-0.5, 2.0, 2.0])
         .target([0.0, 0.0, 0.0])
-        .up([0.0, 1.0, 0.0])
+        .up([0.0, 0.0, 1.0])
         .into();
-
-      this.grid = this.wasm.GridBuilder.new()
-        .center([0.0, 0.0, 0.0])
-        .normal([0.0, 0.0, 1.0])
-        .tangent([1.0, 0.0, 0.0])
-        .delta(0.1)
-        .n(10)
-        .build_with_context(this.context);
 
       this.draw();
     });
@@ -71,7 +63,7 @@ export default {
           this.context.viewport(0, 0, this.width, this.height);
           this.context.clearColor(6.0/255.0, 78.0/255.0, 59.0/255.0, 1.0);
           this.context.clear(this.context.COLOR_BUFFER_BIT);
-          this.grid.draw(this.context, this.camera.as_matrix());
+          this.elements.forEach((e) => {e.draw(this.context, this.camera.as_matrix());});
         });
       });
     },

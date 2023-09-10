@@ -17,6 +17,7 @@
 <script>
 import { ChevronUpIcon } from "@heroicons/vue/24/outline";
 import MenuToolEntry from "./menutool/menutoolentry.vue";
+import { useComponentError } from "@/extras/extra-vue-ui/composable/error.js";
 
 export default {
   name: "MenuTool",
@@ -45,13 +46,13 @@ export default {
     return {};
   },
   mounted: function() {
-    try {
-      //
-    } catch (e) {
-      this.on_error("Error in mounted", e);
-    }
+    // this.catcher("mounted", () => {});
   },
-  emits: [ 'update:modelValue', 'error' ],
+  emits: [ 'update:modelValue', 'error', 'open' ],
+  setup: function(props, context) {
+    const { on_error, catcher } = useComponentError(context);
+    return { on_error, catcher };
+  },
   computed: {
     value: {
       get() { return this.modelValue !== null ? this.modelValue : 'select_tool'; },

@@ -11,6 +11,8 @@
   </div>
 </template>
 <script>
+import { useComponentError } from "@/extras/extra-vue-ui/composable/error.js";
+
 export default {
   name: "MenuToolEntry",
   props: {
@@ -28,5 +30,9 @@ export default {
     },
   },
   emits: [ 'click' ],
+  setup: function(props, context) {
+    const { on_error, catcher } = useComponentError(context);
+    return { on_error, catcher };
+  },
 };
 </script>
