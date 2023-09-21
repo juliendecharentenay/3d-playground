@@ -20,28 +20,41 @@ export default {
   },
   components: { ChevronLeftIcon, },
   emits: [ 'update:modelValue', 'add', 'close' ],
+  watch: {
+    modelValue(newModelValue) {
+      this.check_model_value(newModelValue);
+    }
+  },
   mounted: function() {
-    this.catcher("mounted", 
-    () => {
-      if (this.modelValue === null) { 
-        this.$emit('update:modelValue', 
-          this.wasm.HexahedronBuilder.new()
-            .start([0.0, 0.0, 0.0])
-            .end([0.1, 0.1, 0.1])
-            .build()
-        );
-      }
-    });
+    this.check_model_value(this.modelValue);
   },
   methods: {
+    check_model_value: function(v) {
+      this.catcher("check_model_value",
+      () => {
+        if (v === null) {
+          this.$emit('update:modelValue', 
+            this.wasm.HexahedronBuilder.new()
+              .start([0.0, 0.0, 0.0])
+              .end([0.1, 0.1, 0.1])
+              .build()
+          );
+        }
+      });
+    },
     scroll: function(evt) {
       this.catcher("scroll",
       () => {
+        this.$emit(
+          'update:modelValue', 
+          this.modelValue.translate(this.wasm.Translation.new(evt.delta * 0.1, 0.0, 0.0))
+        );
       });
     },
     click: function(evt) {
       this.catcher("click",
       () => {
+        this.$emit('add');
       });
     },
   },

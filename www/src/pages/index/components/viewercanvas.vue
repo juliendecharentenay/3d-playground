@@ -37,8 +37,12 @@ export default {
   data: function() {
     return {
       camera: null,
+      renderer: null,
       context: null,
     };
+  },
+  watch: {
+    elements() { this.draw(); },
   },
   mounted: function() {
     this.catcher("mounted",
@@ -51,6 +55,9 @@ export default {
         .target([0.0, 0.0, 0.0])
         .up([0.0, 0.0, 1.0])
         .into();
+      this.renderer = this.wasm.RendererBuilder.new()
+        .camera(this.camera.as_camera())
+        .build();
 
       this.draw();
     });
@@ -63,7 +70,11 @@ export default {
           this.context.viewport(0, 0, this.width, this.height);
           this.context.clearColor(6.0/255.0, 78.0/255.0, 59.0/255.0, 1.0);
           this.context.clear(this.context.COLOR_BUFFER_BIT);
-          this.elements.forEach((e) => {e.draw(this.context, this.camera.as_matrix());});
+          this.context.enable(this.context.CULL_FACE);
+          if (this.camera !== null) { 
+            this.renderer = this.renderer.with_camera(this.camera.as_camera());
+            this.elements.forEach((e) => { e.draw(this.context, this.renderer); });
+          }
         });
       });
     },

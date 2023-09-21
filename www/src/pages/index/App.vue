@@ -18,7 +18,7 @@
                   v-model="tool_name" :entries="menu_tool_entries" 
                   />
       <AddTool    ref="add" v-if="tool_name === 'add'" 
-                  v-model="element"   @add="on_add" @close="() => {tool_name = 'select_tool'; element = null;}" 
+                  v-model="element" @add="on_add" @close="() => {tool_name = 'select_tool'; element = null;}" 
                   />
     </div>
   </div>
@@ -105,7 +105,7 @@ export default {
     }; 
   },
   computed: {
-    tool: function() { console.log(this.tool_name); return this.$refs[this.tool_name]; },
+    tool: function() { return this.$refs[this.tool_name]; },
     touch_scroll_delta: function() { return 5.0; }, // console.log(this.tool); return this.tool === undefined || this.tool.scroll_delta === undefined ? 5.0 : this.tool.scroll_delta; },
     elements: function() {
       let arr = this.model.elements;
@@ -133,6 +133,7 @@ export default {
       this.catcher("on_add",
       () => {
         this.model.elements.push(this.element);
+        this.element = null;
       });
     },
   },
