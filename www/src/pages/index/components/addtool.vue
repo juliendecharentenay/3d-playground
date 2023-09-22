@@ -7,6 +7,7 @@
 <script>
 import { ChevronLeftIcon, } from "@heroicons/vue/24/outline";
 import { useComponentError } from "@/extras/extra-vue-ui/composable/error.js";
+import { EventScroll } from "@/extras/extra-vue-ui/touch/events.js";
 
 export default {
   name: "AddTool",
@@ -45,10 +46,21 @@ export default {
     scroll: function(evt) {
       this.catcher("scroll",
       () => {
-        this.$emit(
-          'update:modelValue', 
-          this.modelValue.translate(this.wasm.Translation.new(evt.delta * 0.1, 0.0, 0.0))
-        );
+        if (evt.type === EventScroll.LEFT) {
+          this.$emit('update:modelValue', 
+            this.modelValue.translate(this.wasm.Translation.new(0.0, evt.delta * 0.1, 0.0)));
+
+        } else if (evt.type === EventScroll.TOP) {
+          this.$emit('update:modelValue', 
+            this.modelValue.translate(this.wasm.Translation.new(evt.delta * 0.1, 0.0, 0.0)));
+
+        } else if (evt.type === EventScroll.BTMRIGHT) {
+          this.$emit('update:modelValue', 
+            this.modelValue.translate(this.wasm.Translation.new(0.0, 0.0, evt.delta * 0.1)));
+
+        } else {
+          throw new Error(`Scroll event type ${evt.type} is not supported.`);
+        }
       });
     },
     click: function(evt) {

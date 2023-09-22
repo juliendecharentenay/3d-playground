@@ -52,7 +52,6 @@ export default {
     scroll: function(evt) {
       this.catcher("scroll",
       () => {
-        if ('vibrate' in navigator) { navigator.vibrate(100); }
         this.index_ = this.index + evt.delta;
       });
     },

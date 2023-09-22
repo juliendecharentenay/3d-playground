@@ -16,9 +16,11 @@
     <div class="fixed bottom-5 left-2">
       <SelectTool ref="select_tool" v-if="tool_name === 'select_tool'" 
                   v-model="tool_name" :entries="menu_tool_entries" 
+                  @error="on_error"
                   />
       <AddTool    ref="add" v-if="tool_name === 'add'" 
                   v-model="element" @add="on_add" @close="() => {tool_name = 'select_tool'; element = null;}" 
+                  @error="on_error"
                   />
     </div>
   </div>
@@ -109,7 +111,7 @@ export default {
     touch_scroll_delta: function() { return 5.0; }, // console.log(this.tool); return this.tool === undefined || this.tool.scroll_delta === undefined ? 5.0 : this.tool.scroll_delta; },
     elements: function() {
       let arr = this.model.elements;
-      if (this.element !== null) { console.log("Element added"); arr = arr.concat([this.element]); }
+      if (this.element !== null) { arr = arr.concat([this.element]); }
       return arr;
     },
   },
@@ -117,12 +119,14 @@ export default {
     on_touch_scroll_tool_scroll: function(evt) {
       this.catcher("on_touch_scroll_tool_scroll",
       () => {
+        if ('vibrate' in navigator) { navigator.vibrate(100); }
         this.tool.scroll(evt);
       });
     },
     on_touch_scroll_tool_click: function(evt) {
       this.catcher("on_touch_scroll_tool_click", 
       () => {
+        if ('vibrate' in navigator) { navigator.vibrate(250); }
         this.tool.click(evt);
       });
     },
