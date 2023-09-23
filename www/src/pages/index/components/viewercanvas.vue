@@ -69,8 +69,9 @@ export default {
         () => {
           this.context.viewport(0, 0, this.width, this.height);
           this.context.clearColor(6.0/255.0, 78.0/255.0, 59.0/255.0, 1.0);
-          this.context.clear(this.context.COLOR_BUFFER_BIT);
+          this.context.clear(this.context.COLOR_BUFFER_BIT | this.context.DEPTH_BUFFER_BIT);
           this.context.enable(this.context.CULL_FACE);
+          this.context.enable(this.context.DEPTH_TEST);
           if (this.camera !== null) { 
             this.renderer = this.renderer.with_camera(this.camera.as_camera());
             this.elements.forEach((e) => { e.draw(this.context, this.renderer); });
