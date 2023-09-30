@@ -25,14 +25,6 @@ export default {
     height:   { type: Number, required: true, },
     elements: { type: Array, required: true, },
   },
-  watch: {
-    height(newV, oldV) { 
-      this.catcher("height update", () => {if (this.camera !== null) { this.camera = this.camera.to_camera().height(newV); } });
-    },
-    width(newV, oldV)  { 
-      this.catcher("height update", () => {if (this.camera !== null) { this.camera = this.camera.to_camera().width(newV); } });
-    },
-  },
   emits: [ 'error' ],
   data: function() {
     return {
@@ -43,6 +35,12 @@ export default {
   },
   watch: {
     elements() { this.draw(); },
+    height(newV, oldV) { 
+      this.catcher("height update", () => { if (this.camera !== null) { this.camera = this.camera.to_camera().height(newV); this.draw(); } });
+    },
+    width(newV, oldV)  { 
+      this.catcher("width update", () => { if (this.camera !== null) { this.camera = this.camera.to_camera().width(newV); this.draw(); } });
+    },
   },
   mounted: function() {
     this.catcher("mounted",
