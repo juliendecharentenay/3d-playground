@@ -2,7 +2,10 @@
   <div class="absolute inset-0 bg-gray-500 overflow-clip" id="viewer">
     <TouchAnimation :default_radius="0.10*Math.min(width, height)"
                     @error="on_error" v-if="loaded">
-      <ViewerCanvas :elements="elements" :width="width" :height="height" @error="on_error" v-if="model !== null" />
+      <ViewerCanvas v-if="model !== null" 
+                    :elements="elements" :width="width" :height="height" @error="on_error" 
+                    :camera_prop="camera" @update:CameraProp="(v) => {camera = v;}"
+                    />
       <div class="fixed right-5 bottom-5 flex flex-row items-end justify-end">
         <TouchScrollTool :delta="touch_scroll_delta"
                        @error="on_error"
@@ -14,12 +17,17 @@
       </div>
     </TouchAnimation>
     <div class="fixed bottom-5 left-2">
+      <OrbitTool  ref="default_tool" v-if="tool_name === 'default_tool' && camera !== null" 
+                  v-model="camera"
+                  @click="() => {tool_name = 'select_tool';}"
+                  @error="on_error"
+                  />
       <SelectTool ref="select_tool" v-if="tool_name === 'select_tool'" 
                   v-model="tool_name" :entries="menu_tool_entries" 
                   @error="on_error"
                   />
-      <AddTool    ref="add" v-if="tool_name === 'add'" 
-                  v-model="element" @add="on_add" @close="() => {tool_name = 'select_tool'; element = null;}" 
+      <AddTool    ref="add_tool" v-if="tool_name === 'add_tool'" 
+                  v-model="element" @add="on_add" @close="() => {tool_name = 'default_tool'; element = null;}" 
                   @error="on_error"
                   />
     </div>
@@ -37,15 +45,17 @@ import TouchAnimation from "@/extras/extra-vue-ui/touch/touchanimation.vue";
 import TouchScrollTool from "@/extras/extra-vue-ui/touch/touchscrolltool.vue";
 import SelectTool from "./components/selecttool.vue";
 import AddTool from "./components/addtool.vue";
+import OrbitTool from "./components/orbittool.vue";
 
 import { mount_wasm } from "@/js/mount.js";
 
 const MENU_TOOL_ENTRIES = [
-  { value: 'select_tool', label: 'Select tool' },
-  { value: 'add',         label: 'Add' },
-  { value: 'translate',   label: 'Translate' },
-  { value: 'rotate',      label: 'Rotate' },
-  { value: 'stretch',     label: 'Stretch' },
+  { value: 'default_tool',   label: 'Close' },
+  { value: 'select_tool',    label: 'Select' },
+  { value: 'add_tool',       label: 'Add' },
+  // { value: 'translate', label: 'Translate' },
+  // { value: 'rotate',    label: 'Rotate' },
+  // { value: 'stretch',   label: 'Stretch' },
 ];
 
 function getModelElements(wasm) {
@@ -83,7 +93,7 @@ export default {
     ModalErrorComposable,
     ViewerCanvas,
     TouchAnimation, TouchScrollTool,
-    SelectTool, AddTool,
+    SelectTool, AddTool, OrbitTool,
   },
   mounted() {
     this.catcher("mounted", 
@@ -92,21 +102,21 @@ export default {
       this.mount_wasm()
       .then((wasm) => { this.wasm = wasm; })
       .then(() => {this.model = {elements: getModelElements(this.wasm),};})
-      .then(() => {this.loaded = true;})
       .catch((e) => { this.on_error({msg: "Error in mount_wasm", e}); });
     });
   },
   data() { 
     return { 
-      loaded: false, 
       wasm: null, 
-      tool_name: 'select_tool',
+      tool_name: 'default_tool',
       menu_tool_entries: MENU_TOOL_ENTRIES,
       model: null,
       element: null,
+      camera: null,
     }; 
   },
   computed: {
+    loaded: function() { return this.wasm !== null && this.model !== null; },
     tool: function() { return this.$refs[this.tool_name]; },
     touch_scroll_delta: function() { return 5.0; }, // console.log(this.tool); return this.tool === undefined || this.tool.scroll_delta === undefined ? 5.0 : this.tool.scroll_delta; },
     elements: function() {

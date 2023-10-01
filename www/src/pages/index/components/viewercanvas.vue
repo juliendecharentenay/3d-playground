@@ -21,25 +21,48 @@ export default {
     return { on_error, catcher };
   },
   props: {
-    width:    { type: Number, required: true, },
-    height:   { type: Number, required: true, },
-    elements: { type: Array, required: true, },
+    width:       { type: Number, required: true, },
+    height:      { type: Number, required: true, },
+    elements:    { type: Array, required: true, },
+    camera_prop: { type: Object, },
   },
-  emits: [ 'error' ],
+  emits: [ 'error', 'update:CameraProp' ],
   data: function() {
     return {
-      camera: null,
-      renderer: null,
+      p_renderer: null,
       context: null,
     };
   },
   watch: {
     elements() { this.draw(); },
     height(newV, oldV) { 
-      this.catcher("height update", () => { if (this.camera !== null) { this.camera = this.camera.to_camera().height(newV); this.draw(); } });
+      this.catcher("height update", () => { this.draw(); }); // if (this.camera !== null) { this.camera = this.camera.to_camera().height(newV); this.draw(); } });
     },
     width(newV, oldV)  { 
-      this.catcher("width update", () => { if (this.camera !== null) { this.camera = this.camera.to_camera().width(newV); this.draw(); } });
+      this.catcher("width update", () => { this.draw(); }); // if (this.camera !== null) { this.camera = this.camera.to_camera().width(newV); this.draw(); } });
+    },
+    camera() {
+      this.catcher("camera update", () => { this.draw(); });
+    },
+  },
+  computed: {
+    camera: {
+      get() { return this.camera_prop; },
+      set(v) { this.$emit('update:CameraProp', v); },
+    },
+    renderer: {
+      get() { 
+        return this.catcher("renderer:get",
+          () => {
+            if (this.p_renderer === null && this.camera !== null) {
+              this.p_renderer = this.wasm.RendererBuilder.new()
+              .camera(this.camera.as_camera())
+              .build();
+            }
+            return this.p_renderer;
+        });
+      },
+      set(v) { this.p_renderer = v; }
     },
   },
   mounted: function() {
@@ -53,9 +76,6 @@ export default {
         .target([0.0, 0.0, 0.0])
         .up([0.0, 0.0, 1.0])
         .into();
-      this.renderer = this.wasm.RendererBuilder.new()
-        .camera(this.camera.as_camera())
-        .build();
 
       this.draw();
     });
@@ -70,9 +90,11 @@ export default {
           this.context.clear(this.context.COLOR_BUFFER_BIT | this.context.DEPTH_BUFFER_BIT);
           this.context.enable(this.context.CULL_FACE);
           this.context.enable(this.context.DEPTH_TEST);
-          if (this.camera !== null) { 
-            this.renderer = this.renderer.with_camera(this.camera.as_camera());
+          if (this.renderer !== null) { 
+            this.renderer = this.renderer.with_camera(this.camera.as_camera().height(this.height).width(this.width));
             this.elements.forEach((e) => { e.draw(this.context, this.renderer); });
+          } else {
+            setTimeout(() => {this.draw();}, 100);
           }
         });
       });

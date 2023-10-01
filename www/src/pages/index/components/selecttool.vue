@@ -33,6 +33,9 @@ export default {
       open: false,
     };
   },
+  mounted: function() {
+    this.on_open();
+  },
   computed: {
     scroll_delta: function() { return 10.0; },
     tool: {
