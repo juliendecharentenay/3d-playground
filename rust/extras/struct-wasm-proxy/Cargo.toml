@@ -1,0 +1,20 @@
+[package]
+name = "struct-wasm-proxy"
+version = "0.1.0"
+edition = "2021"
+description = "Library providing a wasm compatible proxy around a struct with getter, setter functions as well as trait"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn              = { version = "2" }
+quote            = { version = "1" }
+proc-macro2      = { version = "1" }
+attribute-derive = { version = "0" }
+
+[dev-dependencies]
+wasm-bindgen     = { version = "0" }
+

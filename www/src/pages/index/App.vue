@@ -3,7 +3,8 @@
     <TouchAnimation :default_radius="0.10*Math.min(width, height)"
                     @error="on_error" v-if="loaded">
       <ViewerCanvas v-if="model !== null" 
-                    :elements="elements" :width="width" :height="height" @error="on_error" 
+                    :model="model"
+                    :current_element="element" :width="width" :height="height" @error="on_error" 
                     :camera_prop="camera" @update:CameraProp="(v) => {camera = v;}"
                     />
       <div class="fixed right-5 bottom-5 flex flex-row items-end justify-end">
@@ -31,6 +32,9 @@
                   @error="on_error"
                   />
     </div>
+    <div class="fixed top-2 left-2" v-if="save_state !== null">
+      <div class="text-slate-500 text-xs">{{ save_state }}</div>
+    </div>
   </div>
   <ModalErrorComposable :error="error" v-if="error !== null" @dismiss="error = null" />
 </template>
@@ -39,6 +43,7 @@ import { computed } from 'vue';
 
 import { useResizeable } from "@/extras/extra-vue-ui/composable/resizeable.js";
 import { useError } from "@/extras/extra-vue-ui/composable/error.js";
+import { useSaveable } from "@/extras/extra-vue-ui/composable/saveable.js";
 import ModalErrorComposable from "@/extras/extra-vue-ui/modal/modalerrorcomposable.vue";
 import ViewerCanvas from "./components/viewercanvas.vue";
 import TouchAnimation from "@/extras/extra-vue-ui/touch/touchanimation.vue";
@@ -53,21 +58,21 @@ const MENU_TOOL_ENTRIES = [
   { value: 'default_tool',   label: 'Close' },
   { value: 'select_tool',    label: 'Select' },
   { value: 'add_tool',       label: 'Add' },
+  { value: 'new_model',      label: 'New' },
   // { value: 'translate', label: 'Translate' },
   // { value: 'rotate',    label: 'Rotate' },
   // { value: 'stretch',   label: 'Stretch' },
 ];
 
-function getModelElements(wasm) {
-  return [
-    wasm.GridBuilder.new()
+function getGrid(wasm) {
+  const grid = wasm.GridBuilder.new()
         .center([0.0, 0.0, 0.0])
         .normal([0.0, 0.0, 1.0])
         .tangent([1.0, 0.0, 0.0])
         .delta(0.1)
         .n(10)
-        .build(),
-  ];
+        .build();
+  return grid;
 }
 
 export default {
@@ -75,8 +80,11 @@ export default {
   setup() {
     const { width, height, resize } = useResizeable("viewer");
     const { error, on_error, catcher } = useError();
+    const { register_save_function, save, save_state } = useSaveable();
     return { width, height, resize, 
-             error, on_error, catcher };
+             error, on_error, catcher,
+             register_save_function, save, save_state,
+             };
   },
   provide() {
     return {
@@ -101,31 +109,78 @@ export default {
       this.resize();
       this.mount_wasm()
       .then((wasm) => { this.wasm = wasm; })
-      .then(() => {this.model = {elements: getModelElements(this.wasm),};})
+      .then(() => { this.on_read(); })
+      .then(() => { this.register_save_function(() => { this.on_save(); }); })
       .catch((e) => { this.on_error({msg: "Error in mount_wasm", e}); });
     });
   },
   data() { 
     return { 
       wasm: null, 
-      tool_name: 'default_tool',
+      tool_name_data: 'default_tool',
       menu_tool_entries: MENU_TOOL_ENTRIES,
       model: null,
       element: null,
-      camera: null,
+      camera_data: null,
     }; 
   },
   computed: {
+    camera: {
+      get() { return this.camera_data; },
+      set(v) {
+        this.catcher("camera:set",
+        () => {
+          this.camera_data = v;
+          if (this.model !== null && this.camera_data !== null) {
+            this.model = this.model.set_camera(this.camera_data.as_camera());
+            this.save();
+          }
+        });
+      },
+    },
     loaded: function() { return this.wasm !== null && this.model !== null; },
     tool: function() { return this.$refs[this.tool_name]; },
     touch_scroll_delta: function() { return 5.0; }, // console.log(this.tool); return this.tool === undefined || this.tool.scroll_delta === undefined ? 5.0 : this.tool.scroll_delta; },
-    elements: function() {
-      let arr = this.model.elements;
-      if (this.element !== null) { arr = arr.concat([this.element]); }
-      return arr;
+    tool_name: {
+      get() { return this.tool_name_data; },
+      set(v) { 
+        if (v === 'new_model') {
+          this.on_new_model();
+          v = 'default_tool';
+        }
+        this.tool_name_data = v; 
+      },
     },
   },
   methods: {
+    on_save: function() {
+      this.catcher("on_save", 
+      () => { if (this.model !== null) { window.localStorage.setItem("model", this.model.to_json()); } }
+      );
+    },
+    on_read: function() {
+      try {
+        const json = window.localStorage.getItem("model");
+        if (json === null) { 
+          this.on_new_model(); 
+        } else {
+          this.model = this.wasm.ModelWasmed.from_json(json);
+          this.camera = this.model.camera();
+        }
+      } catch (e) {
+        console.error(e);
+        if (this.model === null) { this.on_new_model(); }
+      }
+    },
+    on_new_model: function() {
+      this.catcher("on_new_model",
+      () => {
+        if (this.wasm === null) { throw new Error("Wasm not initialised yet"); }
+        let grid = getGrid(this.wasm);
+        this.model = this.wasm.ModelWasmed.default().add_element(grid);
+        this.camera = null;
+      });
+    },
     on_touch_scroll_tool_scroll: function(evt) {
       this.catcher("on_touch_scroll_tool_scroll",
       () => {
@@ -146,7 +201,8 @@ export default {
     on_add: function() {
       this.catcher("on_add",
       () => {
-        this.model.elements.push(this.element);
+        this.model = this.model.add_element(this.element);
+        this.save();
         this.element = null;
       });
     },

@@ -23,7 +23,8 @@ export default {
   props: {
     width:       { type: Number, required: true, },
     height:      { type: Number, required: true, },
-    elements:    { type: Array, required: true, },
+    model:       { type: Object, required: true, },
+    current_element: { type: Object, required: false, },
     camera_prop: { type: Object, },
   },
   emits: [ 'error', 'update:CameraProp' ],
@@ -34,15 +35,22 @@ export default {
     };
   },
   watch: {
-    elements() { this.draw(); },
+    model() { this.draw(); },
+    current_element() { this.draw(); },
     height(newV, oldV) { 
       this.catcher("height update", () => { this.draw(); }); // if (this.camera !== null) { this.camera = this.camera.to_camera().height(newV); this.draw(); } });
     },
     width(newV, oldV)  { 
       this.catcher("width update", () => { this.draw(); }); // if (this.camera !== null) { this.camera = this.camera.to_camera().width(newV); this.draw(); } });
     },
-    camera() {
-      this.catcher("camera update", () => { this.draw(); });
+    camera(newV) {
+      this.catcher("camera update", () => { 
+        if (newV !== null) {
+          this.draw(); 
+        } else {
+          this.camera_initialise();
+        }
+      });
     },
   },
   computed: {
@@ -69,18 +77,23 @@ export default {
     this.catcher("mounted",
     () => {
       this.context = this.$refs.viewer.getContext("webgl2");
-      this.camera = this.wasm.CameraBuilder.basic()
+      if (this.camera === null) { this.camera_initialise(); }
+      this.draw();
+    });
+  },
+  methods: {
+    camera_initialise: function() {
+      this.catcher("camera_initialise",
+      () => {
+        this.camera = this.wasm.CameraBuilder.basic()
         .width(this.width)
         .height(this.height)
         .eye([-0.5, 2.0, 2.0])
         .target([0.0, 0.0, 0.0])
         .up([0.0, 0.0, 1.0])
         .into();
-
-      this.draw();
-    });
-  },
-  methods: {
+      });
+    },
     draw: function() {
       requestAnimationFrame(() => {
         this.catcher("draw",
@@ -92,7 +105,8 @@ export default {
           this.context.enable(this.context.DEPTH_TEST);
           if (this.renderer !== null) { 
             this.renderer = this.renderer.with_camera(this.camera.as_camera().height(this.height).width(this.width));
-            this.elements.forEach((e) => { e.draw(this.context, this.renderer); });
+            this.model.draw(this.context, this.renderer);
+            if (this.current_element != null) { this.current_element.draw(this.context, this.renderer); }
           } else {
             setTimeout(() => {this.draw();}, 100);
           }
