@@ -14,3 +14,8 @@ pub enum ThreedpError {
   LibWebglError(#[from] extra_rust_wasm::webgl::WebglError),
 }
 
+impl std::convert::From<ThreedpError> for wasm_proxy::WasmProxyError {
+  fn from(v: ThreedpError) -> Self {
+    wasm_proxy::WasmProxyError::from_error(v)
+  }
+}

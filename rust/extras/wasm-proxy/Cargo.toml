@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 wasm-bindgen = { version = "0" }
 struct-wasm-proxy = { path = "../struct-wasm-proxy" }
+serde_json = { version = "1" }

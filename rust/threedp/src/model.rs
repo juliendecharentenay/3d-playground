@@ -48,7 +48,7 @@ impl ModelWasmed {
 
   /// Add an element
   pub fn add_element(mut self, element: wasm_bindgen::JsValue) -> WasmProxyResult<ModelWasmed> {
-    self.inner_mut().elements.push(element.try_into()?);
+    self.inner_mut().elements.push(element.try_into().map_err(ThreedpError::from)?);
     Ok(self)
   }
 }

@@ -23,14 +23,20 @@ impl WasmProxyError {
   pub fn cause(&self) -> String { self.cause.clone() }
 }
 
-/// Convert from a regular error to wasm compatible error
-impl<T> std::convert::From<T> for WasmProxyError 
-where T: std::error::Error {
-  fn from(v: T) -> Self {
+impl WasmProxyError {
+  pub fn from_error<T>(v: T) -> Self 
+  where T: std::error::Error {
     WasmProxyError {
       message: v.to_string(),
       cause: v.source().map(|e| format!("{e}")).unwrap_or("Cause not available".to_string()),
     }
+  }
+}
+
+/// Convert from a regular error to wasm compatible error
+impl std::convert::From<serde_json::Error> for WasmProxyError {
+  fn from(v: serde_json::Error) -> Self {
+    WasmProxyError::from_error(v)
   }
 }
 
