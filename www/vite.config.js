@@ -23,10 +23,10 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     target: 'esnext',
-    minify: false,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/index.html'),
+        viewer: resolve(__dirname, 'src/viewer.html'),
       },
     },
   },

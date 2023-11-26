@@ -1,10 +1,15 @@
 use super::*;
 
+/// Generate a new id
+fn id_default() -> String { nanoid::nanoid!(6, &nanoid::alphabet::SAFE) }
+
 /// Struct corresponding to a model to display
-#[derive(Default, serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(wasm_proxy::StructWasmProxy)]
 pub struct Model
 {
+  #[serde(default = "id_default")]
+  id: String,
   name: String,
   #[struct_wasm_proxy(skip = true)]
   camera: Option<extra_rust_wasm::webgl::Camera>,
@@ -12,10 +17,36 @@ pub struct Model
   elements: Vec<extra_rust_wasm::webgl::DrawableElement>,
 }
 
+impl Default for Model {
+  fn default() -> Model {
+    Model {
+      id: id_default(),
+      name: "New model".to_string(),
+      camera: None,
+      elements: Vec::new(),
+    }
+  }
+}
+
+impl Model {
+  /// Strip: create a stripped version without camera and elements for savings purpose
+  pub fn strip(&self) -> Model {
+    Model {
+      id: self.id.clone(),
+      name: self.name.clone(),
+      camera: None,
+      elements: Vec::new(),
+    }
+  }
+}
+
 #[wasm_bindgen::prelude::wasm_bindgen]
 impl ModelWasmed {
   /// Create a default
   pub fn default() -> ModelWasmed { Model::default().into() }
+
+  /// Strip: create a stripped version without camera and elements for savings purpose
+  pub fn strip(&self) -> ModelWasmed { self.inner().strip().into() }
 
   /// Retrieve the camera. Returns an error if no camera is available
   pub fn camera(&self) -> WasmProxyResult<extra_rust_wasm::webgl::Camera> {
@@ -53,27 +84,4 @@ impl ModelWasmed {
   }
 }
 
-
-
-/*
-impl Model {
-  pub fn default() -> Model { Default::default() }
-
-  pub fn set_name(mut self, name: String) -> Model { self.name = name; self }
-
-  pub fn name(&self) -> String { self.name.clone() }
-
-  pub fn set_camera(mut self, camera: extra_rust_wasm::webgl::Camera) -> Model { self.camera = Some(camera); self }
-
-  pub fn camera(&self) -> Option<extra_rust_wasm::webgl::Camera> { self.camera.clone() }
-
-  pub fn add_grid(mut self, element: extra_rust_wasm::webgl::Grid) -> Model {
-    self.elements.push(Box::new(element)); self
-  }
-
-  pub fn add_hexahedron(mut self, element: extra_rust_wasm::webgl::Hexahedron) -> Model {
-    self.elements.push(Box::new(element)); self
-  }
-}
-  */
 
