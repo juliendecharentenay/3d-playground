@@ -17,6 +17,18 @@ export function save_model(model) {
   storage().setItem(JSON.stringify({"type": "model_info", "id": model.id()}), model.strip().to_json());
 }
 
+export function delete_model(wasm, model) {
+  update(wasm);
+  let id = model.id();
+  let store = storage();
+  let to_remove = [];
+  for (let i = 0; i < store.length; i ++) {
+    let k = JSON.parse(store.key(i));
+    if (k.id === id) { to_remove.push(store.key(i)); }
+  }
+  to_remove.forEach((k) => {store.removeItem(k);});
+}
+
 export function read_model(wasm, id) {
   update(wasm);
   let store = storage();

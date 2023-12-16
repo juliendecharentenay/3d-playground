@@ -17,6 +17,7 @@ serde_json = { version = "1" }
 thiserror = { version = "1" }
 nanoid = { version = "0" }
 getrandom = { version = "0", features = [ "js" ] }
+chrono = { version = "0", features = [ "serde" ] }
 
 web-sys = { version = "0", features = [ "console", "WebGl2RenderingContext", ] }
 

@@ -3,6 +3,9 @@ use super::*;
 /// Generate a new id
 fn id_default() -> String { nanoid::nanoid!(6, &nanoid::alphabet::SAFE) }
 
+/// Get today's date
+fn today() -> chrono::naive::NaiveDate { chrono::Utc::now().date_naive() }
+
 /// Struct corresponding to a model to display
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(wasm_proxy::StructWasmProxy)]
@@ -15,6 +18,13 @@ pub struct Model
   camera: Option<extra_rust_wasm::webgl::Camera>,
   #[struct_wasm_proxy(skip = true)]
   elements: Vec<extra_rust_wasm::webgl::DrawableElement>,
+  // #[struct_wasm_proxy(using = String, get_with = naive_date_to_string, try_set_with = set_naive_date )]
+  #[struct_wasm_proxy(skip = true)]
+  #[serde(default = "today")]
+  created: chrono::naive::NaiveDate,
+  #[struct_wasm_proxy(skip = true)]
+  #[serde(default = "today")]
+  last_modified: chrono::naive::NaiveDate,
 }
 
 impl Default for Model {
@@ -24,6 +34,8 @@ impl Default for Model {
       name: "New model".to_string(),
       camera: None,
       elements: Vec::new(),
+      created: today(),
+      last_modified: today(),
     }
   }
 }
@@ -36,7 +48,14 @@ impl Model {
       name: self.name.clone(),
       camera: None,
       elements: Vec::new(),
+      created: self.created.clone(),
+      last_modified: self.last_modified.clone(),
     }
+  }
+
+  /// Update on modify
+  pub fn modified(&mut self) {
+    self.last_modified = today();
   }
 }
 
@@ -55,7 +74,9 @@ impl ModelWasmed {
 
   /// Set the camera, consuming the object
   pub fn set_camera(mut self, camera: extra_rust_wasm::webgl::Camera) -> WasmProxyResult<ModelWasmed> {
-    self.inner_mut().camera = Some(camera); Ok(self)
+    self.inner_mut().camera = Some(camera); 
+    self.inner_mut().modified();
+    Ok(self)
   }
 
   /// Convert model to JSON string
@@ -80,8 +101,15 @@ impl ModelWasmed {
   /// Add an element
   pub fn add_element(mut self, element: wasm_bindgen::JsValue) -> WasmProxyResult<ModelWasmed> {
     self.inner_mut().elements.push(element.try_into().map_err(ThreedpError::from)?);
+    self.inner_mut().modified();
     Ok(self)
   }
+
+  /// Retrieve the date created as a string YYYY/mm/dd
+  pub fn created(&self) -> String { self.inner.created.format("%Y/%m/%d").to_string() }
+
+  /// Retrieve the date of last modification as a string YYYY/mm/dd
+  pub fn last_modified(&self) -> String { self.inner.last_modified.format("%Y/%m/%d").to_string() }
 }
 
 

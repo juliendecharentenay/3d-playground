@@ -12,6 +12,8 @@ pub enum ThreedpError {
   SerdeJsonError(#[from] serde_json::Error),
   #[error(transparent)]
   LibWebglError(#[from] extra_rust_wasm::webgl::WebglError),
+  #[error(transparent)]
+  ChronoParseError(#[from] chrono::format::ParseError),
 }
 
 impl std::convert::From<ThreedpError> for wasm_proxy::WasmProxyError {

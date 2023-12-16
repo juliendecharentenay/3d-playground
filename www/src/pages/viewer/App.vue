@@ -63,6 +63,7 @@ const MENU_TOOL_ENTRIES = [
   { value: 'select_tool',    label: 'Select' },
   { value: 'add_tool',       label: 'Add' },
   { value: 'new_model',      label: 'New' },
+  { value: 'exit',           label: 'Exit' },
   // { value: 'translate', label: 'Translate' },
   // { value: 'rotate',    label: 'Rotate' },
   // { value: 'stretch',   label: 'Stretch' },
@@ -160,11 +161,14 @@ export default {
     tool_name: {
       get() { return this.tool_name_data; },
       set(v) { 
-        if (v === 'new_model') {
+        if (v === 'exit') {
+          window.location.href = '/';
+        } else if (v === 'new_model') {
           this.on_new_model();
-          v = 'default_tool';
+          this.tool_name_data = 'default_tool';
+        } else {
+          this.tool_name_data = v; 
         }
-        this.tool_name_data = v; 
       },
     },
   },
