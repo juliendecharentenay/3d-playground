@@ -4,6 +4,7 @@
   <div v-if="models !== null && models.length > 0">
   <TableComponent>
     <template #thead>
+      <TableColumnHeader></TableColumnHeader>
       <TableColumnHeader>Name</TableColumnHeader>
       <TableColumnHeader>Modified</TableColumnHeader>
       <TableColumnHeader>Created</TableColumnHeader>
@@ -12,14 +13,20 @@
     <template #tbody>
       <tr v-for="m in models"
         :key="m.id()">
-        <TableEntry>{{ m.name() }}</TableEntry>
+        <TableEntry>
+          <a :href="`/viewer.html?id=${m.id()}`">
+            <div class="text-sm font-semibold text-indigo-600 hover:text-indigo-500"><EyeIcon class="h-4 w-5" /></div>
+          </a>
+        </TableEntry>
+        <TableEntry>
+          <a :href="`/viewer.html?id=${m.id()}`">
+          {{ m.name() }}
+          </a>
+        </TableEntry>
         <TableEntry>{{ m.last_modified() }}</TableEntry>
         <TableEntry>{{ m.created() }}</TableEntry>
         <TableEntry>
-          <div class="flex flex-row gap-x-1 items-center">
-            <a :href="`/viewer.html?id=${m.id()}`" class="text-sm font-semibold text-indigo-600 hover:text-indigo-500"><EyeIcon class="h-4 w-5" /></a>
-            <div class="cursor-pointer text-indigo-600 hover:text-indigo-500" @click="() => {delete_model(m);}"><TrashIcon class="h-4 w-5" /></div>
-          </div>
+          <div class="cursor-pointer text-indigo-600 hover:text-indigo-500" @click="() => {delete_model(m);}"><TrashIcon class="h-4 w-5" /></div>
         </TableEntry>
       </tr>
     </template>

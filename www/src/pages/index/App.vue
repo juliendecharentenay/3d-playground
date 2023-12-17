@@ -18,7 +18,7 @@
         <a href="https://github.com/juliendecharentenay/3dp" class="text-sm font-semibold leading-6 text-gray-900">OSS on Github <span aria-hidden="true">→</span></a>
       </div>
 
-      <div class="mt-10 -mx-10">
+      <div class="mt-10 lg:-mx-10">
       <ModelList @error="on_error" v-if="wasm !== null" />
       </div>
 
