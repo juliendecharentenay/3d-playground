@@ -68,6 +68,7 @@ export default {
   mounted: function() {
     this.catcher('mounted', () => { this.load_models(); });
   },
+  /*
   computed: {
     models2: function() {
       // if (this.models_ === null) { return null; }
@@ -78,12 +79,13 @@ export default {
       return [];
     },
   },
+  */
   methods: {
     load_models: function() {
       this.catcher('delete_model',
       () => {
         this.models = get_list_models(this.wasm);
-        this.models.sort((a,b) => a.last_modified().localeCompare(b.last_modified()));
+        this.models.sort((a,b) => b.last_modified().localeCompare(a.last_modified()));
       });
     },
     delete_model: function(m) {

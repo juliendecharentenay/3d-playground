@@ -40,6 +40,13 @@ impl std::convert::From<serde_json::Error> for WasmProxyError {
   }
 }
 
+/// Convert from a JsValue error
+impl std::convert::From<wasm_bindgen::JsValue> for WasmProxyError {
+  fn from(v: wasm_bindgen::JsValue) -> Self {
+    WasmProxyError::from_jsvalue(v)
+  }
+}
+
 impl WasmProxyError {
   pub fn from_jsvalue(v: wasm_bindgen::JsValue) -> WasmProxyError {
     WasmProxyError {
@@ -47,7 +54,15 @@ impl WasmProxyError {
       cause: "Cause not available".to_string(),
     }
   }
+
+  pub fn from_string(message: String) -> WasmProxyError {
+    WasmProxyError {
+      message,
+      cause: "Cause not available".to_string(),
+    }
+  }
 }
+
 
 /*
 pub trait WasmProxyErrorCastable {

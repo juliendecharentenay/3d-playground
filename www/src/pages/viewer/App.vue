@@ -6,6 +6,8 @@
                     :model="model"
                     :current_element="element" :width="width" :height="height" @error="on_error" 
                     :camera_prop="camera" @update:CameraProp="(v) => {camera = v;}"
+                    @hover:Element="({uuid}) => {on_hover_element(uuid);}"
+                    @select:Element="({uuid}) => {on_select_element(uuid);}"
                     />
       <div class="fixed right-5 bottom-5 flex flex-row items-end justify-end">
         <TouchScrollTool :delta="touch_scroll_delta"
@@ -34,8 +36,27 @@
     </div>
     <div class="fixed top-2 left-2">
       <div class="flex flex-col">
-      <input class="text-slate-400 text-sm bg-transparent focus:outline-none" v-model="name" placeholder="Untitled" />
-      <div class="text-slate-500 text-xs" v-if="save_state !== null">{{ save_state }}</div>
+        <div class="flex flex-row">
+        <input class="text-slate-400 text-sm bg-transparent focus:outline-none" v-model="name" placeholder="Untitled" 
+                 @focus="() => {name_editing = true;}"
+                 @blur="() => {name_editing = false;}"
+                 />
+        <div v-if="name_editing === true"><a href="#"><CheckIcon class="text-slate-400 h-5 w-5" /></a></div>
+        </div>
+        <div class="text-slate-500 text-xs" v-if="save_state !== null">{{ save_state }}</div>
+      </div>
+    </div>
+    <div class="fixed top-2 right-2">
+      <div class="flex flex-col items-end">
+        <div v-for="e in elements"
+             :key="e.uuid"
+             class="text-slate-500 text-xs font-light"
+             :class="{
+               'text-slate-400 font-normal': hover_element_uuid === e.uuid,
+               'text-slate-300 font-normal': select_element_uuid === e.uuid,
+             }">
+          {{ e.type_name }} [{{ e.uuid }}]
+        </div>
       </div>
     </div>
   </div>
@@ -57,6 +78,10 @@ import OrbitTool from "./components/orbittool.vue";
 
 import { mount_wasm } from "@/js/mount.js";
 import { save_model, read_model } from "@/js/storage.js";
+
+import { 
+  CheckIcon,
+  } from "@heroicons/vue/24/outline";
 
 const MENU_TOOL_ENTRIES = [
   { value: 'default_tool',   label: 'Close' },
@@ -107,6 +132,7 @@ export default {
     ViewerCanvas,
     TouchAnimation, TouchScrollTool,
     SelectTool, AddTool, OrbitTool,
+    CheckIcon,
   },
   mounted() {
     this.catcher("mounted", 
@@ -127,9 +153,21 @@ export default {
       model: null,
       element: null,
       camera_data: null,
+      name_editing: false,
+      hover_element_uuid: null,
+      select_element_uuid: null,
     }; 
   },
   computed: {
+    elements: function() {
+      return this.catcher("elements:get",
+      () => {
+        if (this.model === null) { return []; }
+        let r = [];
+        this.model.for_each_element((e) => { r.push({uuid: e.uuid(), type_name: e.type_name()}); });
+        return r;
+      });
+    },
     camera: {
       get() { return this.camera_data; },
       set(v) {
@@ -137,8 +175,10 @@ export default {
         () => {
           this.camera_data = v;
           if (this.model !== null && this.camera_data !== null) {
+            const camera = this.camera_data.as_camera();
+            const updated = camera.updated();
             this.model = this.model.set_camera(this.camera_data.as_camera());
-            this.save();
+            if (updated) { this.save(); }
           }
         });
       },
@@ -173,10 +213,31 @@ export default {
     },
   },
   methods: {
+    on_hover_element: function(uuid) {
+      this.catcher("on_hover_element",
+      () => {
+          this.hover_element_uuid = uuid;
+      });
+    },
+    on_select_element: function(uuid) {
+      this.catcher("on_select_element",
+      () => {
+        if (uuid !== null) {
+          if (this.select_element_uuid === uuid) {
+            this.select_element_uuid = null;
+          } else {
+            this.select_element_uuid = uuid;
+          }
+        }
+      });
+    },
     on_save: function() {
       this.catcher("on_save", 
-      () => { if (this.model !== null) { save_model(this.model); } }
-      );
+      () => { 
+        if (this.model !== null) { 
+          save_model(this.model).catch((e) => { this.on_error({msg: "Error in save_model", e}); }); 
+        } 
+      });
     },
     on_read: function() {
       try {
@@ -199,8 +260,13 @@ export default {
       () => {
         if (this.wasm === null) { throw new Error("Wasm not initialised yet"); }
         let grid = getGrid(this.wasm);
-        this.model = this.wasm.ModelWasmed.default().add_element(grid);
-        this.camera = null;
+        const model = this.wasm.ModelWasmed.default().add_element(grid);
+        save_model(model)
+        .then((model) => {
+          const url = new URL(window.location); url.searchParams.set("id", model.id());
+          window.location = url;
+        })
+        .catch((e) => {this.on_error("Error in on_new_model::save_model", e);});
       });
     },
     on_touch_scroll_tool_scroll: function(evt) {

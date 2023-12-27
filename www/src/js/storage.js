@@ -13,8 +13,15 @@ function update(wasm) {
 }
 
 export function save_model(model) {
-  storage().setItem(JSON.stringify({"type": "model", "id": model.id()}), model.to_json());
-  storage().setItem(JSON.stringify({"type": "model_info", "id": model.id()}), model.strip().to_json());
+  return new Promise((resolve, reject) => {
+    try {
+      storage().setItem(JSON.stringify({"type": "model", "id": model.id()}), model.to_json());
+      storage().setItem(JSON.stringify({"type": "model_info", "id": model.id()}), model.strip().to_json());
+      resolve(model);
+    } catch (e) {
+      reject(e);
+    }
+  });
 }
 
 export function delete_model(wasm, model) {

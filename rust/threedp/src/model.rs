@@ -1,5 +1,10 @@
 use super::*;
 
+/*
+trait ModelElementTrait: extra_rust_wasm::webgl::DrawableElement + wasm_bindgen::JsCast {}
+impl<T: extra_rust_wasm::webgl::DrawableElement + wasm_bindgen::JsCast> ModelElementTrait for T {}
+*/
+
 /// Generate a new id
 fn id_default() -> String { nanoid::nanoid!(6, &nanoid::alphabet::SAFE) }
 
@@ -18,7 +23,6 @@ pub struct Model
   camera: Option<extra_rust_wasm::webgl::Camera>,
   #[struct_wasm_proxy(skip = true)]
   elements: Vec<extra_rust_wasm::webgl::DrawableElement>,
-  // #[struct_wasm_proxy(using = String, get_with = naive_date_to_string, try_set_with = set_naive_date )]
   #[struct_wasm_proxy(skip = true)]
   #[serde(default = "today")]
   created: chrono::naive::NaiveDate,
@@ -93,8 +97,23 @@ impl ModelWasmed {
   pub fn draw(&self, 
               context: &web_sys::WebGl2RenderingContext, 
               renderer: &extra_rust_wasm::webgl::renderer::Renderer) -> WasmProxyResult<()> {
+    use extra_rust_wasm::webgl::renderer::RendererTrait;
+    renderer.init(context).map_err(|e| format!("{e:?}")).map_err(WasmProxyError::from_string)?;
     use extra_rust_wasm::webgl::Drawable;
     for element in self.inner().elements.iter() { element.draw(context, renderer).map_err(WasmProxyError::from_jsvalue)?; }
+    renderer.end(context).map_err(|e| format!("{e:?}")).map_err(WasmProxyError::from_string)?;
+    Ok(())
+  }
+
+  /// Pick
+  pub fn pick(&self,
+              context: &web_sys::WebGl2RenderingContext,
+              picker: &extra_rust_wasm::webgl::renderer::Picker) -> WasmProxyResult<()> {
+    use extra_rust_wasm::webgl::renderer::RendererTrait;
+    picker.init(context).map_err(|e| format!("{e:?}")).map_err(WasmProxyError::from_string)?;
+    use extra_rust_wasm::webgl::Drawable;
+    for element in self.inner().elements.iter() { element.draw(context, picker).map_err(WasmProxyError::from_jsvalue)?; }
+    picker.end(context).map_err(|e| format!("{e:?}")).map_err(WasmProxyError::from_string)?;
     Ok(())
   }
 
@@ -112,4 +131,18 @@ impl ModelWasmed {
   pub fn last_modified(&self) -> String { self.inner.last_modified.format("%Y/%m/%d").to_string() }
 }
 
+#[wasm_bindgen::prelude::wasm_bindgen(inline_js = "export function call_f(f, v) { f(v); }")]
+extern "C" {
+  #[wasm_bindgen::prelude::wasm_bindgen(catch)]
+  fn call_f(f: &wasm_bindgen::JsValue, v: wasm_bindgen::JsValue) -> Result<(), wasm_bindgen::JsValue>;
+}
+
+#[wasm_bindgen::prelude::wasm_bindgen]
+impl ModelWasmed {
+  /// Loop over all elements with a functional
+  pub fn for_each_element(&self, f: wasm_bindgen::JsValue) -> WasmProxyResult<()> {
+    for e in self.inner().elements.iter() { call_f(&f, e.clone().into())?; }
+    Ok(())
+  }
+}
 

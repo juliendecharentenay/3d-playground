@@ -14,7 +14,8 @@
       <h1 class="mt-10 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">3D Playground</h1>
       <p class="mt-6 text-lg leading-8 text-gray-600">A WebGL based 3D modelling engine using Rust/WASM</p>
       <div class="mt-10 flex items-center gap-x-6">
-        <a href="/viewer.html" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">New</a>
+        <a href="#" class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          @click="on_new">New</a>
         <a href="https://github.com/juliendecharentenay/3dp" class="text-sm font-semibold leading-6 text-gray-900">OSS on Github <span aria-hidden="true">→</span></a>
       </div>
 
@@ -43,14 +44,15 @@ import ModalErrorComposable from "@/extras/extra-vue-ui/modal/modalerrorcomposab
 
 import { mount_wasm } from "@/js/mount.js";
 import ModelList from "./components/modellist.vue";
+import { save_model } from "@/js/storage.js";
 
 export default {
   name: "App",
   setup() {
     const { error, on_error, catcher } = useError();
     return { 
-             error, on_error, catcher,
-             };
+      error, on_error, catcher,
+    };
   },
   provide() {
     return {
@@ -82,6 +84,27 @@ export default {
   },
   computed: {
     loaded: function() { return this.wasm !== null; },
+    on_new: function() {
+      this.catcher("on_new",
+      () => {
+        if (this.wasm === null) { throw new Error("Wasm not initialised yet"); }
+        const model = this.wasm.ModelWasmed.default().add_element(
+          this.wasm.GridBuilder.new()
+          .center([0.0, 0.0, 0.0])
+          .normal([0.0, 0.0, 1.0])
+          .tangent([1.0, 0.0, 0.0])
+          .delta(0.1)
+          .n(10)
+          .build()
+        );
+        save_model(model)
+        .then((model) => {
+          const url = new URL(window.location); url.pathname = "/viewer.html"; url.searchParams.set("id", model.id());
+          window.location = url;
+        })
+        .catch((e) => { this.on_error({msg: "Error in on_new::save_model", e}); });
+      });
+    },
   },
   methods: {
   },
