@@ -53,7 +53,7 @@
              class="text-slate-500 text-xs font-light"
              :class="{
                'text-slate-400 font-normal': hover_element_uuid === e.uuid,
-               'text-slate-300 font-normal': select_element_uuid === e.uuid,
+               'text-slate-200 font-normal': select_element_uuid === e.uuid,
              }">
           {{ e.type_name }} [{{ e.uuid }}]
         </div>
