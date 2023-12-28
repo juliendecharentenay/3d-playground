@@ -19,7 +19,7 @@
                        />
       </div>
     </TouchAnimation>
-    <div class="fixed bottom-5 left-2">
+    <div class="fixed bottom-20 left-2">
       <OrbitTool  ref="default_tool" v-if="tool_name === 'default_tool' && camera !== null" 
                   v-model="camera"
                   @click="() => {tool_name = 'select_tool';}"
@@ -33,6 +33,10 @@
                   v-model="element" @add="on_add" @close="() => {tool_name = 'default_tool'; element = null;}" 
                   @error="on_error"
                   />
+    </div>
+    <div class="fixed bottom-5 left-2 flex flex-row gap-x-2 text-slate-900 hover:text-slate-800">
+      <div class="cursor-pointer hover:text-slate-950" @click="on_new_model"><DocumentPlusIcon class="h-10 w-10" /></div>
+      <div class="cursor-pointer hover:text-slate-950" @click="on_exit"><ArrowRightOnRectangleIcon class="h-10 w-10" /></div>
     </div>
     <div class="fixed top-2 left-2">
       <div class="flex flex-col">
@@ -80,7 +84,9 @@ import { mount_wasm } from "@/js/mount.js";
 import { save_model, read_model } from "@/js/storage.js";
 
 import { 
-  CheckIcon,
+  ArrowRightOnRectangleIcon,
+  CheckIcon, 
+  DocumentPlusIcon,
   } from "@heroicons/vue/24/outline";
 
 const MENU_TOOL_ENTRIES = [
@@ -132,7 +138,9 @@ export default {
     ViewerCanvas,
     TouchAnimation, TouchScrollTool,
     SelectTool, AddTool, OrbitTool,
-    CheckIcon,
+    ArrowRightOnRectangleIcon,
+    CheckIcon, 
+    DocumentPlusIcon,
   },
   mounted() {
     this.catcher("mounted", 
@@ -292,6 +300,12 @@ export default {
         this.model = this.model.add_element(this.element);
         this.save();
         this.element = null;
+      });
+    },
+    on_exit: function() {
+      this.catcher("on_exit",
+      () => {
+        window.location.href = '/';
       });
     },
   },
