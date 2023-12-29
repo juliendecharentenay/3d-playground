@@ -61,6 +61,12 @@
              }">
           {{ e.type_name }} [{{ e.uuid }}]
         </div>
+        <div class="flex flex-col items-center text-slate-500 hover:text-slate-600" v-if="select_element_uuid === null">
+          <div class="cursor-pointer hover:text-slate-400" @click="on_add_element"><PlusIcon class="h-8 w-8" /></div>
+        </div>
+        <div class="flex flex-col items-center text-slate-500 hover:text-slate-600" v-if="select_element_uuid !== null">
+          <div class="cursor-pointer hover:text-slate-400" @click="on_remove_element"><MinusIcon class="h-8 w-8" /></div>
+        </div>
       </div>
     </div>
   </div>
@@ -87,6 +93,8 @@ import {
   ArrowRightOnRectangleIcon,
   CheckIcon, 
   DocumentPlusIcon,
+  MinusIcon,
+  PlusIcon,
   } from "@heroicons/vue/24/outline";
 
 const MENU_TOOL_ENTRIES = [
@@ -141,6 +149,8 @@ export default {
     ArrowRightOnRectangleIcon,
     CheckIcon, 
     DocumentPlusIcon,
+    MinusIcon,
+    PlusIcon,
   },
   mounted() {
     this.catcher("mounted", 
@@ -300,6 +310,27 @@ export default {
         this.model = this.model.add_element(this.element);
         this.save();
         this.element = null;
+      });
+    },
+    on_remove_element: function() {
+      this.catcher("on_remove_element",
+      () => {
+        const uuid = this.select_element_uuid;
+        this.select_element_uuid = null;
+        this.model = this.model.remove_element(uuid);
+        this.save();
+      });
+    },
+    on_add_element: function() {
+      this.catcher("on_add_element",
+      () => {
+        const e = this.wasm.HexahedronBuilder.new()
+          .start([0.0, 0.0, 0.0])
+          .end([0.1, 0.1, 0.1])
+          .build();
+        this.select_element_uuid = e.uuid();
+        this.model = this.model.add_element(e);
+        this.save();
       });
     },
     on_exit: function() {

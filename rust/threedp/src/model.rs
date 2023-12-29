@@ -124,6 +124,14 @@ impl ModelWasmed {
     Ok(self)
   }
 
+  /// Remove an element
+  pub fn remove_element(mut self, uuid: String) -> WasmProxyResult<ModelWasmed> {
+    use extra_rust_wasm::webgl::Identifiable;
+    self.inner_mut().elements.retain(|e| e.uuid().unwrap_or_default() != uuid);
+    self.inner_mut().modified();
+    Ok(self)
+  }
+
   /// Retrieve the date created as a string YYYY/mm/dd
   pub fn created(&self) -> String { self.inner.created.format("%Y/%m/%d").to_string() }
 
