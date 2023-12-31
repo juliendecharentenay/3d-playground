@@ -61,11 +61,32 @@
              }">
           {{ e.type_name }} [{{ e.uuid }}]
         </div>
-        <div class="flex flex-col items-center text-slate-500 hover:text-slate-600" v-if="select_element_uuid === null">
-          <div class="cursor-pointer hover:text-slate-400" @click="on_add_element"><PlusIcon class="h-8 w-8" /></div>
+        <div class="mt-1 flex flex-col items-center text-slate-500 hover:text-slate-600" v-if="select_element_uuid === null">
+          <div class="cursor-pointer rounded-md hover:text-slate-400 hover:bg-slate-600" 
+               @click="on_add_element"><PlusIcon class="h-8 w-8" /></div>
         </div>
-        <div class="flex flex-col items-center text-slate-500 hover:text-slate-600" v-if="select_element_uuid !== null">
-          <div class="cursor-pointer hover:text-slate-400" @click="on_remove_element"><MinusIcon class="h-8 w-8" /></div>
+        <div class="mt-1 flex flex-col gap-y-2 items-center text-slate-500 hover:text-slate-600" v-if="select_element_uuid !== null">
+          <div class="cursor-pointer rounded-md hover:text-slate-400 hover:bg-slate-600" 
+               :class="{
+                 'bg-slate-600 text-slate-400': tool_name === 'Pan',
+               }"
+               @click="select_tool_pan"
+               ><PanIcon class="h-7 w-7" /></div>
+          <div class="cursor-pointer rounded-md hover:text-slate-400 hover:bg-slate-600" 
+               :class="{
+                 'bg-slate-600 text-slate-400': tool_name === 'Rotate',
+               }"
+               @click="select_tool_rotate"
+               ><ArrowPathIcon class="h-7 w-7" /></div>
+          <div class="cursor-pointer rounded-md hover:text-slate-400 hover:bg-slate-600" 
+               :class="{
+                 'bg-slate-600 text-slate-400': tool_name === 'Scale',
+               }"
+               @click="select_tool_scale"
+               ><ArrowTopRightOnSquareIcon class="h-7 w-7" /></div>
+          <div class="cursor-pointer rounded-md hover:text-slate-400 hover:bg-slate-600" 
+               @click="on_remove_element"
+               ><TrashIcon class="h-7 w-7" /></div>
         </div>
       </div>
     </div>
@@ -86,16 +107,25 @@ import SelectTool from "./components/selecttool.vue";
 import AddTool from "./components/addtool.vue";
 import OrbitTool from "./components/orbittool.vue";
 
+import { Orbit } from "./tools/orbit.js";
+import { Pan   } from "./tools/pan.js";
+import { Rotate} from "./tools/rotate.js";
+import { Scale } from "./tools/scale.js";
+
 import { mount_wasm } from "@/js/mount.js";
 import { save_model, read_model } from "@/js/storage.js";
 
+import PanIcon from "@/icons/panicon.vue";
 import { 
-  ArrowRightOnRectangleIcon,
-  CheckIcon, 
-  DocumentPlusIcon,
-  MinusIcon,
-  PlusIcon,
-  } from "@heroicons/vue/24/outline";
+    ArrowPathIcon,
+    ArrowRightOnRectangleIcon,
+    ArrowTopRightOnSquareIcon,
+    CheckIcon, 
+    DocumentPlusIcon,
+    MinusIcon,
+    PlusIcon,
+    TrashIcon,
+    } from "@heroicons/vue/24/outline";
 
 const MENU_TOOL_ENTRIES = [
   { value: 'default_tool',   label: 'Close' },
@@ -146,16 +176,21 @@ export default {
     ViewerCanvas,
     TouchAnimation, TouchScrollTool,
     SelectTool, AddTool, OrbitTool,
+    PanIcon,
+    ArrowPathIcon,
     ArrowRightOnRectangleIcon,
+    ArrowTopRightOnSquareIcon,
     CheckIcon, 
     DocumentPlusIcon,
     MinusIcon,
     PlusIcon,
+    TrashIcon,
   },
   mounted() {
     this.catcher("mounted", 
     () => {
       this.resize();
+      this.tool_ = new Orbit();
       this.mount_wasm()
       .then((wasm) => { this.wasm = wasm; })
       .then(() => { this.on_read(); })
@@ -174,6 +209,7 @@ export default {
       name_editing: false,
       hover_element_uuid: null,
       select_element_uuid: null,
+      tool_: null,
     }; 
   },
   computed: {
@@ -214,8 +250,17 @@ export default {
       },
     },
     loaded: function() { return this.wasm !== null && this.model !== null; },
-    tool: function() { return this.$refs[this.tool_name]; },
+    tool: {
+      get() { return this.tool_;
+        // return this.$refs[this.tool_name]; 
+      },
+      set(v) { this.tool_ = v; }
+    },
     touch_scroll_delta: function() { return 5.0; }, // console.log(this.tool); return this.tool === undefined || this.tool.scroll_delta === undefined ? 5.0 : this.tool.scroll_delta; },
+    tool_name: function() {
+      return (this.tool !== null) ? this.tool.name() : "";
+    },
+    /*
     tool_name: {
       get() { return this.tool_name_data; },
       set(v) { 
@@ -229,8 +274,41 @@ export default {
         }
       },
     },
+    */
   },
   methods: {
+    select_tool_pan: function() { 
+      this.catcher("select_tool_pan", () => { 
+        if (this.tool.name() === "Pan") {
+          this.select_tool_orbit();
+        } else {
+          this.tool = new Pan(this.wasm, this.select_element_uuid);
+        }
+      });
+    },
+    select_tool_rotate: function() { 
+      this.catcher("select_tool_rotate", () => { 
+        if (this.tool.name() === "Rotate") {
+          this.select_tool_orbit();
+        } else {
+          this.tool = new Rotate(this.wasm, this.select_element_uuid);
+        }
+      });
+    },
+    select_tool_scale: function() { 
+      this.catcher("select_tool_scale", () => { 
+        if (this.tool.name() === "Scale") {
+          this.select_tool_orbit();
+        } else {
+          this.tool = new Scale(this.wasm, this.select_element_uuid);
+        }
+      });
+    },
+    select_tool_orbit: function() {
+      this.catcher("select_tool_orbit", () => { 
+        this.tool = new Orbit(); 
+      });
+    },
     on_hover_element: function(uuid) {
       this.catcher("on_hover_element",
       () => {
@@ -243,8 +321,18 @@ export default {
         if (uuid !== null) {
           if (this.select_element_uuid === uuid) {
             this.select_element_uuid = null;
+            this.select_tool_orbit();
           } else {
             this.select_element_uuid = uuid;
+            if (this.tool_name === "Pan") {
+               this.tool = new Pan(this.wasm, this.select_element_uuid);
+            } else if (this.tool_name === "Rotate") {
+               this.tool = new Rotate(this.wasm, this.select_element_uuid);
+            } else if (this.tool_name === "Scale") {
+               this.tool = new Scale(this.wasm, this.select_element_uuid);
+            } else if (this.tool_name !== "Orbit") {
+              throw new Error(`Tool name ${this.tool_name} is not handled...`);
+            }
           }
         }
       });
@@ -291,14 +379,18 @@ export default {
       this.catcher("on_touch_scroll_tool_scroll",
       () => {
         if ('vibrate' in navigator) { navigator.vibrate(100); }
-        this.tool.scroll(evt);
+        // this.tool.scroll(evt);
+        this.model = this.tool.scroll(evt, this.model);
+        this.camera = this.model.camera();
       });
     },
     on_touch_scroll_tool_click: function(evt) {
       this.catcher("on_touch_scroll_tool_click", 
       () => {
         if ('vibrate' in navigator) { navigator.vibrate(250); }
-        this.tool.click(evt);
+        // this.tool.click(evt);
+        this.model = this.tool.click(evt, this.model);
+        this.camera = this.model.camera();
       });
     },
     on_touch_scroll_event: function(key, evt) {

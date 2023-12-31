@@ -117,9 +117,32 @@ impl ModelWasmed {
     Ok(())
   }
 
+  /// Get an element. Create a copy. Return `null` if element is not found
+  pub fn get_element(&self, uuid: String) -> WasmProxyResult<wasm_bindgen::JsValue> {
+    use extra_rust_wasm::webgl::Identifiable;
+    let r = self.inner().elements.iter()
+    .find(|e| e.uuid().unwrap_or_default() == uuid)
+    .cloned()
+    .map(std::convert::Into::into)
+    .unwrap_or_else(|| wasm_bindgen::JsValue::NULL);
+    Ok(r)
+  }
+
   /// Add an element
   pub fn add_element(mut self, element: wasm_bindgen::JsValue) -> WasmProxyResult<ModelWasmed> {
     self.inner_mut().elements.push(element.try_into().map_err(ThreedpError::from)?);
+    self.inner_mut().modified();
+    Ok(self)
+  }
+
+  /// Update an element
+  pub fn update_element(mut self, element: wasm_bindgen::JsValue) -> WasmProxyResult<ModelWasmed> {
+    let element: extra_rust_wasm::webgl::DrawableElement = element.try_into().map_err(ThreedpError::from)?;
+    let uuid: String = element.uuid().map_err(|e| e.inner()).map_err(ThreedpError::from)?;
+    use extra_rust_wasm::webgl::Identifiable;
+    if let Some(e) = self.inner_mut().elements.iter_mut().find(|e| e.uuid().unwrap_or_default() == uuid) {
+      let _ = std::mem::replace(e, element);
+    }
     self.inner_mut().modified();
     Ok(self)
   }
