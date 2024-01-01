@@ -24,7 +24,6 @@ export class Scale {
     if (this.element_ === null) { throw new Error(`Unable to retrieve element with uuid ${this.uuid_}`); }
 
     let reference_point = this.element_.transform_reference_point();
-    console.log(reference_point);
     let scaling_builder = this.wasm_.ScalingBuilder.default()
       .with_origin(reference_point[0], reference_point[1], reference_point[2]);
     if (evt.type === EventScroll.LEFT) {
