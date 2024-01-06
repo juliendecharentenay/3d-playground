@@ -16,7 +16,6 @@ export class Scale {
   name() { return "Scale"; }
 
   scroll(evt, model) {
-    console.log("scaling...");
     if (this.wasm_ === null) { throw new Error("Wasm is not specified"); }
     if (this.uuid_ === null) { throw new Error("Uuid is not specified"); }
 
